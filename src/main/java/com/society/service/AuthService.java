@@ -1,5 +1,6 @@
 package com.society.service;
 
+
 import com.society.dto.request.OtpVerificationRequest;
 import com.society.dto.request.RegisterRequest;
 import com.society.dto.response.AuthResponse;
@@ -13,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 @Service
 @Slf4j

@@ -1,6 +1,7 @@
 package com.society.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,7 @@ public class JwtUtil {
     private long expiration;
 
     private SecretKey getSigningKey(){
+
         return Keys.hmacShaKeyFor(Base64.getDecoder().decode(secret));
     }
 
@@ -37,6 +39,7 @@ public class JwtUtil {
     }
 
     public String extractPhoneNo(String token){
+
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -70,6 +73,38 @@ public class JwtUtil {
     }
 
     private boolean isTokenExpired(String token){
+
         return extractExpiration(token).before(new Date());
     }
+
+    private String createToken(Map<String, Object> claims, String subject){
+        return Jwts.builder()
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis()+expiration))
+                .signWith(getSigningKey(), Jwts.SIG.HS256)
+                .compact();
+    }
+
+    private Claims extractAllClaims(String token){
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public Boolean validateToken(String token, String phoneNo){
+        try {
+            String extractedPhoneNo = extractPhoneNo(token);
+            return (extractedPhoneNo.equals(phoneNo) && !isTokenExpired(token));
+        }catch (JwtException | IllegalArgumentException exception){
+            return false;
+        }
+    }
+
+
+
+
 }
