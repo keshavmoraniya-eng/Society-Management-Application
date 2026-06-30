@@ -25,9 +25,10 @@ server:
     context-path: /api/v1
 
 jwt:
-  secret: ${JWT_SECRET:bXlTZWNyZXRLZXlGb3JTb2NpZXR5dlscWVudEFwcGxpY2F0aW9uMjAyNA==}
+  secret: ${JWT_SECRET:"bXktc3VwZXItc2VjdXJlLWp3dC1zZWNyZXQta2V5LW1pbmltdW0tMzItY2hhcmFjdGVycw=="}
   expiration: 86400000
   refresh-expiration: 604800000
+
 
 otp:
   expiration-minutes: 5

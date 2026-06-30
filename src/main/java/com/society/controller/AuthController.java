@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth/v1")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Tag(name = "1. Authentication", description = "User registration and OTP-based login")
 public class AuthController {
@@ -42,4 +42,5 @@ public class AuthController {
         AuthResponse response = authService.verifyOtpAndLogin(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
+
 }
