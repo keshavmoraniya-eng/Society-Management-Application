@@ -1,15 +1,11 @@
 package com.society.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class OtpVerificationRequest {
+
     @NotBlank
     @Pattern(regexp = "^[0-9]{10}$")
     private String phoneNo;

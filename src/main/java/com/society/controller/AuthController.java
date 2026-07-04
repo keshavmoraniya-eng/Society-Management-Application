@@ -42,4 +42,5 @@ public class AuthController {
         AuthResponse response = authService.verifyOtpAndLogin(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
+
 }

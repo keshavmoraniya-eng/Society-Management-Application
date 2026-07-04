@@ -1,5 +1,6 @@
 package com.society.service;
 
+
 import com.society.dto.request.OtpVerificationRequest;
 import com.society.dto.request.RegisterRequest;
 import com.society.dto.response.AuthResponse;
@@ -13,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 @Service
 @Slf4j
@@ -69,15 +69,25 @@ public class AuthService {
     }
 
     public AuthResponse loginWithOtp(String phoneNo) {
+        log.info("Login request for: {}", phoneNo);
+
         User user = userRepository.findByPhoneNo(phoneNo)
-                .orElseThrow(() -> new ResourceNotFoundException("User not registered"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Phone number not registered. Please register first."));
 
         if (!user.getIsActive()) {
-            throw new BadRequestException("Account is deactivated. Contact admin");
+            throw new BadRequestException("Account is deactivated");
         }
 
+        // Send OTP
         otpService.generateAndSendOtp(phoneNo);
-        return AuthResponse.builder().phoneNo(phoneNo).build();
+
+        // Return temporary response (without token, since OTP not verified yet)
+        return AuthResponse.builder()
+                .phoneNo(user.getPhoneNo())
+                .fullName(user.getFullName())
+                .role(user.getRole().name())
+                .build();
     }
 
     @Transactional
@@ -138,4 +148,6 @@ public class AuthService {
                 .build();
         securityGuardRepository.save(guard);
     }
+
+
 }

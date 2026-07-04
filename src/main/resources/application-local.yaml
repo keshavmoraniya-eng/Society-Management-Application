@@ -25,16 +25,10 @@ server:
     context-path: /api/v1
 
 jwt:
-  secret: ${JWT_SECRET:bXlTZWNyZXRLZXlGb3JTb2NpZXR5dlscWVudEFwcGxpY2F0aW9uMjAyNA==}
+  secret: ${JWT_SECRET:"bXktc3VwZXItc2VjdXJlLWp3dC1zZWNyZXQta2V5LW1pbmltdW0tMzItY2hhcmFjdGVycw=="}
   expiration: 86400000
   refresh-expiration: 604800000
 
-twilio:
-  enabled: false
-  account-sid: ${TWILIO_ACCOUNT_SID}
-  auth-token: ${TWILIO_AUTH_TOKEN}
-  phone-number: ${TWILIO_PHONE_NUMBER}
-  verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID}
 
 otp:
   expiration-minutes: 5

@@ -1,6 +1,8 @@
 package com.society.service;
 
+
 import com.society.dto.request.OtpVerificationRequest;
+import com.society.dto.request.RegisterRequest;
 import com.society.dto.response.AuthResponse;
 import com.society.entity.*;
 import com.society.exception.BadRequestException;
@@ -17,9 +19,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-// Add this import
-import com.society.dto.request.RegisterRequest;
-
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -41,12 +40,12 @@ class AuthServiceTest {
     @DisplayName("Register rental - Success")
     void registerRental_Success() {
         RegisterRequest req = RegisterRequest.builder()
-                .fullName("John").phoneNo("9876543210").role("RENTAL")
+                .fullName("keshav").phoneNo("7987948810").role("RENTAL")
                 .apartmentNo("A-101").totalMembers(4).bloodGroup("O+").build();
 
-        User saved = User.builder().id(1L).phoneNo("9876543210").role(Role.RENTAL).build();
+        User saved = User.builder().id(1L).phoneNo("7987948810").role(Role.RENTAL).build();
 
-        when(userRepository.existsByPhoneNo("9876543210")).thenReturn(false);
+        when(userRepository.existsByPhoneNo("7987948810")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(saved);
 
         String result = authService.register(req);
@@ -58,7 +57,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("Register - Phone exists throws exception")
     void register_PhoneExists_Throws() {
-        RegisterRequest req = RegisterRequest.builder().phoneNo("9876543210").role("RENTAL").build();
+        RegisterRequest req = RegisterRequest.builder().phoneNo("7987948810").role("RENTAL").build();
         when(userRepository.existsByPhoneNo(anyString())).thenReturn(true);
 
         assertThatThrownBy(() -> authService.register(req))
@@ -68,28 +67,28 @@ class AuthServiceTest {
     @Test
     @DisplayName("Login with OTP - Success")
     void loginWithOtp_Success() {
-        User user = User.builder().id(1L).phoneNo("9876543210").isActive(true).build();
-        when(userRepository.findByPhoneNo("9876543210")).thenReturn(Optional.of(user));
+        User user = User.builder().id(1L).phoneNo("7987948810").isActive(true).build();
+        when(userRepository.findByPhoneNo("7987948810")).thenReturn(Optional.of(user));
 
-        AuthResponse res = authService.loginWithOtp("9876543210");
+        AuthResponse res = authService.loginWithOtp("7987948810");
 
-        assertThat(res.getPhoneNo()).isEqualTo("9876543210");
-        verify(otpService).generateAndSendOtp("9876543210");
+        assertThat(res.getPhoneNo()).isEqualTo("7987948810");
+        verify(otpService).generateAndSendOtp("7987948810");
     }
 
     @Test
     @DisplayName("Verify OTP - Success returns token")
     void verifyOtp_Success() {
         User user = User.builder()
-                .id(1L).phoneNo("9876543210").role(Role.RENTAL)
-                .fullName("John").isVerified(false).build();
+                .id(1L).phoneNo("7987948810").role(Role.RENTAL)
+                .fullName("keshav").isVerified(false).build();
 
         when(otpService.verifyOtp(anyString(), anyString())).thenReturn(true);
-        when(userRepository.findByPhoneNo("9876543210")).thenReturn(Optional.of(user));
+        when(userRepository.findByPhoneNo("7987948810")).thenReturn(Optional.of(user));
         when(jwtUtil.generateToken(anyString(), anyString(), anyLong())).thenReturn("token");
 
         AuthResponse res = authService.verifyOtpAndLogin(
-                OtpVerificationRequest.builder().phoneNo("9876543210").otp("123456").build());
+                OtpVerificationRequest.builder().phoneNo("7987948810").otp("123456").build());
 
         assertThat(res.getToken()).isEqualTo("token");
         assertThat(res.getRole()).isEqualTo("RENTAL");

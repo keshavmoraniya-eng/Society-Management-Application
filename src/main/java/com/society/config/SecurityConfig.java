@@ -80,6 +80,7 @@ public class SecurityConfig {
 
                         // Users
                         .requestMatchers("/users/**").authenticated()
+                        .requestMatchers("/actuator/health/**","/actuator/info").authenticated()
 
                         .anyRequest().authenticated()
                 )
@@ -93,13 +94,16 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Angular dev server + production origins
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:4200",          // Angular dev
-                "http://localhost:4201",          // Angular alt port
-                "https://your-production-app.com", // Prod (update before deploy)
-                "http://localhost:64292"
-        ));
+        configuration.setAllowedOriginPatterns(List.of("*"));
+
+//        // Angular dev server + production origins
+//        configuration.setAllowedOrigins(List.of(
+//                "http://localhost:4200",          // Angular dev
+//                "http://localhost:4201",          // Angular alt port
+//                "https://your-production-app.com", // Prod (update before deploy)
+//                "http://localhost:64292",
+//                "http://localhost:52738"
+//        ));
 
         configuration.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
