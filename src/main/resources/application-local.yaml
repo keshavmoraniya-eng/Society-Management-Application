@@ -23,12 +23,22 @@ server:
   port: 8080
   servlet:
     context-path: /api/v1
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
 
 jwt:
   secret: ${JWT_SECRET:"bXktc3VwZXItc2VjdXJlLWp3dC1zZWNyZXQta2V5LW1pbmltdW0tMzItY2hhcmFjdGVycw=="}
   expiration: 86400000
   refresh-expiration: 604800000
 
+twilio:
+  enabled: ${TWILIO_ENABLED:false}
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  verify-service-sid: ${VERIFY_SERVICE_SID:}
+  phone-number: ${TWILIO_PHONE_NUMBER:+91}
 
 
 otp:

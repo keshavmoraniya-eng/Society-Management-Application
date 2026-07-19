@@ -1,0 +1,55 @@
+# ====================================
+# TEST PROFILE CONFIGURATION
+# ====================================
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  h2:
+    console:
+      enabled: true
+
+# ====================================
+# JWT - Test values
+# ====================================
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4taW4tdGVzdC1tb2RlLW9ubHktZG8tbm90LXVzZS1pbi1wcm9k
+  expiration: 86400000
+
+# ====================================
+# TWILIO - Mock values for tests
+# ====================================
+twilio:
+  enabled: false
+  account-sid: TEST_ACCOUNT_SID
+  auth-token: TEST_AUTH_TOKEN
+  verify-service-sid: TEST_VERIFY_SERVICE_SID
+
+# ====================================
+# OTP - Test configuration
+# ====================================
+otp:
+  expiration-minutes: 5
+  length: 6
+
+# ====================================
+# LOGGING
+# ====================================
+logging:
+  level:
+    root: WARN
+    com.society: INFO
+    org.springframework.web: WARN
+    org.hibernate: WARN

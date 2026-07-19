@@ -62,7 +62,7 @@ public class AuthService {
             default -> log.info("No additional profile required for role: {}", role);
         }
 
-        otpService.generateAndSendOtp(request.getPhoneNo());
+        otpService.sendOtp(request.getPhoneNo());
         log.info("Registration successful for: {}", request.getPhoneNo());
 
         return "Registration successful. Please verify OTP sent to your phone.";
@@ -80,7 +80,7 @@ public class AuthService {
         }
 
         // Send OTP
-        otpService.generateAndSendOtp(phoneNo);
+        otpService.sendOtp(phoneNo);
 
         // Return temporary response (without token, since OTP not verified yet)
         return AuthResponse.builder()

@@ -1,30 +1,27 @@
 package com.society.service;
 
-import com.society.entity.OtpRecord;
-import com.society.exception.BadRequestException;
-import com.society.repository.OtpRepository;
+import com.society.exception.OtpException;
 import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
+import com.twilio.exception.TwilioException;
+import com.twilio.rest.verify.v2.service.Verification;
+import com.twilio.rest.verify.v2.service.VerificationCheck;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.Random;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class OtpService {
 
-    private final OtpRepository otpRepository;
+    private static final String SMS = "sms";
+    private static final String APPROVED = "approved";
 
-    @Value("${twilio.enabled}")
-    private boolean twilioEnabled;
+    private static final String AUTH_ERROR = "20003";
+    private static final String SERVICE_NOT_FOUND = "20404";
+    private static final String INVALID_PHONE = "21211";
 
     @Value("${twilio.account-sid}")
     private String accountSid;
@@ -32,101 +29,143 @@ public class OtpService {
     @Value("${twilio.auth-token}")
     private String authToken;
 
-    @Value("${twilio.phone-number}")
-    private String twilioPhone;
+    @Value("${twilio.verify-service-sid}")
+    private String verifyServiceSid;
 
-    @Value("${otp.expiration-minutes}")
-    private int expirationMinutes;
+    @Value("${twilio.enabled:false}")
+    private boolean enabled;
 
-    @Value("${otp.length}")
-    private int otpLength;
+    @Value("${twilio.country-code:+91}")
+    private String countryCode;
 
-    private final Random random = new Random();
+    @PostConstruct
+    public void initialize() {
 
-    @Transactional
-    public String generateAndSendOtp(String phoneNo) {
-        // Mark old OTPs as used
-        otpRepository.findLatestActiveOtp(phoneNo).ifPresent(otp -> {
-            otp.setIsUsed(true);
-            otpRepository.save(otp);
-        });
+        if (!isConfigured()) {
+            log.warn("Twilio is disabled or configuration is missing.");
+            return;
+        }
 
-        String otp = generateOtp();
-        LocalDateTime expiry = LocalDateTime.now().plusMinutes(expirationMinutes);
+        Twilio.init(accountSid, authToken);
 
-        OtpRecord record = OtpRecord.builder()
-                .phoneNo(phoneNo)
-                .otp(otp)
-                .expiryTime(expiry)
-                .isUsed(false)
-                .attempts(0)
-                .build();
-
-        otpRepository.save(record);
-        sendOtpSms(phoneNo, otp);
-
-        log.info("OTP generated for phone: {}", phoneNo);
-        return otp;
+        log.info("Twilio Verify initialized successfully.");
     }
 
-    @Transactional
-    public boolean verifyOtp(String phoneNo, String otp) {
-        Optional<OtpRecord> recordOpt = otpRepository.findLatestActiveOtp(phoneNo);
+    public String sendOtp(String phoneNumber) {
 
-        if (recordOpt.isEmpty()) {
-            throw new BadRequestException("No OTP found. Please request a new one");
+        validateConfiguration();
+
+        String phone = formatPhoneNumber(phoneNumber);
+
+        try {
+
+            Verification verification = Verification.creator(
+                    verifyServiceSid,
+                    phone,
+                    SMS
+            ).create();
+
+            log.info("OTP sent successfully to {}", phone);
+
+            return verification.getSid();
+
+        } catch (TwilioException ex) {
+
+            throw mapException(ex);
+
         }
 
-        OtpRecord record = recordOpt.get();
-
-        if (record.getExpiryTime().isBefore(LocalDateTime.now())) {
-            record.setIsUsed(true);
-            otpRepository.save(record);
-            throw new BadRequestException("OTP expired. Please request a new one");
-        }
-
-        if (record.getAttempts() >= 5) {
-            record.setIsUsed(true);
-            otpRepository.save(record);
-            throw new BadRequestException("Too many attempts. Please request a new OTP");
-        }
-
-        record.setAttempts(record.getAttempts() + 1);
-
-        if (!record.getOtp().equals(otp)) {
-            otpRepository.save(record);
-            throw new BadRequestException("Invalid OTP");
-        }
-
-        record.setIsUsed(true);
-        otpRepository.save(record);
-        log.info("OTP verified successfully for: {}", phoneNo);
-        return true;
     }
 
-    private String generateOtp() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < otpLength; i++) {
-            sb.append(random.nextInt(10));
+    public boolean verifyOtp(String phoneNumber, String otp) {
+
+        validateConfiguration();
+
+        String phone = formatPhoneNumber(phoneNumber);
+
+        try {
+
+            VerificationCheck verification = VerificationCheck.creator(verifyServiceSid)
+                    .setTo(phone)
+                    .setCode(otp)
+                    .create();
+
+            boolean approved = APPROVED.equalsIgnoreCase(verification.getStatus());
+
+            log.info("OTP verification status : {}", verification.getStatus());
+
+            return approved;
+
+        } catch (TwilioException ex) {
+
+            log.error("OTP verification failed : {}", ex.getMessage());
+
+            return false;
+
         }
-        return sb.toString();
+
     }
 
-    private void sendOtpSms(String phoneNo, String otp) {
-        if (twilioEnabled) {
-            try {
-                Twilio.init(accountSid, authToken);
-                Message.creator(
-                        new PhoneNumber("+91" + phoneNo),
-                        new PhoneNumber(twilioPhone),
-                        "Your Society Management OTP is: " + otp + ". Valid for " + expirationMinutes + " minutes."
-                ).create();
-                log.info("OTP sent via Twilio to: {}", phoneNo);
-            } catch (Exception e) {
-                log.error("Failed to send OTP via Twilio: {}", e.getMessage());
-            }
-        } else {
-            log.info("OTP for {} (DEV MODE): {}", phoneNo, otp);
+    private void validateConfiguration() {
+
+        if (!isConfigured()) {
+            throw new OtpException("Twilio is not configured.");
         }
+
     }
+
+    private boolean isConfigured() {
+
+        return enabled
+                && isValid(accountSid, "AC")
+                && isValid(verifyServiceSid, "VA")
+                && authToken != null
+                && !authToken.isBlank();
+
+    }
+
+    private boolean isValid(String value, String prefix) {
+
+        return value != null
+                && !value.isBlank()
+                && value.startsWith(prefix);
+
+    }
+
+    private RuntimeException mapException(TwilioException ex) {
+
+        return switch (ex.getMessage()) {
+
+            case AUTH_ERROR ->
+                    new OtpException("Invalid Twilio credentials.");
+
+            case SERVICE_NOT_FOUND ->
+                    new OtpException("Verify Service SID not found.");
+
+            case INVALID_PHONE ->
+                    new OtpException("Invalid phone number.");
+
+            default ->
+                    new OtpException("Failed to send OTP.", ex);
+
+        };
+
+    }
+
+    private String formatPhoneNumber(String phoneNumber) {
+
+        String digits = phoneNumber.replaceAll("\\D", "");
+
+        if (digits.startsWith("0")) {
+            digits = digits.substring(1);
+        }
+
+        if (!digits.startsWith(countryCode.replace("+", ""))) {
+            digits = countryCode.replace("+", "") + digits;
+        }
+
+        return "+" + digits;
+
+    }
+
 }
