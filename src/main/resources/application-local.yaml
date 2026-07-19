@@ -40,7 +40,6 @@ twilio:
   verify-service-sid: ${VERIFY_SERVICE_SID:}
   phone-number: ${TWILIO_PHONE_NUMBER:+91}
 
-
 otp:
   expiration-minutes: 5
   length: 6
