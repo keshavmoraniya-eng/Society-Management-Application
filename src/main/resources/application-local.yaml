@@ -2,9 +2,9 @@ spring:
   application:
     name: society-management
   datasource:
-    url: jdbc:mysql://localhost:3306/society_db?createDatabaseIfNotExist=true
-    username: root
-    password: Keshav798794
+    url: ${DB_URL:jdbc:mysql://localhost:3306/society_db?createDatabaseIfNotExist=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}                    # ← From env only
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -23,13 +23,32 @@ server:
   port: 8080
   servlet:
     context-path: /api/v1
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
 
+# ====================================
+# JWT - Use environment variables ONLY
+# ====================================
 jwt:
-  secret: ${JWT_SECRET:"bXktc3VwZXItc2VjdXJlLWp3dC1zZWNyZXQta2V5LW1pbmltdW0tMzItY2hhcmFjdGVycw=="}
+  secret: ${JWT_SECRET}                           # ← Required, no default
   expiration: 86400000
   refresh-expiration: 604800000
 
-
+# ====================================
+# TWILIO - Use environment variables ONLY
+# ====================================
+twilio:
+  enabled: ${TWILIO_ENABLED:false}                # ← Default to false
+  account-sid: ${TWILIO_ACCOUNT_SID:}             # ← No default value
+  auth-token: ${TWILIO_AUTH_TOKEN:}               # ← No default value
+  verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:} # ← No default value
+  default-country-code: ${TWILIO_COUNTRY_CODE:91}
+  expiration-minutes: 5
+  max-requests-per-window: 3
+  max-verify-attempts: 5
+  rate-limit-window-minutes: 5
 
 otp:
   expiration-minutes: 5
@@ -50,7 +69,7 @@ management:
         include: health,info,metrics,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized                 # ← Changed for security
 
 springdoc:
   api-docs:
