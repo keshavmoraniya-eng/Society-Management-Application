@@ -50,9 +50,13 @@ public class User {
     @Column(name = "approval_status", length = 20)
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
 
+    @Column(name = "reviewer_comment", columnDefinition = "TEXT")
+    private String reviewerComment;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
 
     @LastModifiedDate
     @Column(name = "updated_at")

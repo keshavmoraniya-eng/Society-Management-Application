@@ -38,6 +38,19 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Profile fetched",userService.getUserByPhone(userDetails.getUsername())));
     }
 
+    @PutMapping("/me")
+    @Operation(summary = "Update current user profile")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
+            @Valid @RequestBody UpdateProfileRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByPhoneNo(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        UserResponse updated = userService.updateProfile(user.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Profile updated", updated));
+    }
+
     //New: Get registration/approval status
     @GetMapping("/me/registration-status")
     public ResponseEntity<ApiResponse<RegistrationStatusResponse>> getRegistrationStatus(@AuthenticationPrincipal UserDetails userDetails){
@@ -83,9 +96,54 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Rentals fetched",userService.getAllRentals()));
     }
 
+    @GetMapping("/security-guards")
+    @PreAuthorize("hasAnyRole('SOCIETY_MANAGER','SOCIETY_OWNER')")
+    @Operation(summary = "Get all security guards")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllSecurityGuards() {
+        return ResponseEntity.ok(ApiResponse.success("Guards fetched", userService.getAllSecurityGuards()));
+    }
+
     @GetMapping("/get/user/role")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getByRole(@RequestParam Role role){
         return ResponseEntity.ok(ApiResponse.success("User fetched",userService.getAllUsersByRole(role)));
+    }
+
+    @GetMapping("/pending-approvals")
+    @PreAuthorize("hasAnyRole('SOCIETY_MANAGER','SOCIETY_OWNER')")
+    @Operation(summary = "Get all users pending approval (Manager/Owner)")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getPendingApprovals() {
+        return ResponseEntity.ok(ApiResponse.success("Pending users fetched",
+                userService.getPendingApprovals()));
+    }
+
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('SOCIETY_MANAGER','SOCIETY_OWNER')")
+    @Operation(summary = "Approve user registration (Manager/Owner)")
+    public ResponseEntity<ApiResponse<UserResponse>> approveUser(
+            @PathVariable Long id,
+            @RequestParam(required = false) String comment,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User manager = userRepository.findByPhoneNo(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
+
+        UserResponse approved = userService.approveUser(id, manager.getId(), comment);
+        return ResponseEntity.ok(ApiResponse.success("User approved", approved));
+    }
+
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasAnyRole('SOCIETY_MANAGER','SOCIETY_OWNER')")
+    @Operation(summary = "Reject user registration (Manager/Owner)")
+    public ResponseEntity<ApiResponse<UserResponse>> rejectUser(
+            @PathVariable Long id,
+            @RequestParam String reason,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User manager = userRepository.findByPhoneNo(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
+
+        UserResponse rejected = userService.rejectUser(id, manager.getId(), reason);
+        return ResponseEntity.ok(ApiResponse.success("User rejected", rejected));
     }
 
 }

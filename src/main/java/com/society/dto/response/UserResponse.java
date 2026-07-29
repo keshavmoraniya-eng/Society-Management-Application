@@ -1,8 +1,10 @@
 package com.society.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -18,6 +20,7 @@ public class UserResponse {
     private String role;
     private Boolean isActive;
     private Boolean isVerified;
+    private String approvalStatus;
 
     //Rental Details
     private String apartmentNo;
@@ -31,5 +34,12 @@ public class UserResponse {
     private String employeeId;
     private String shiftType;
     private Integer gateNumber;
+
+    // Timestamps
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedAt;
 
 }
