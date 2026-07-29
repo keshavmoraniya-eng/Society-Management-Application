@@ -1,5 +1,6 @@
 package com.society.repository;
 
+import com.society.entity.ApprovalStatus;
 import com.society.entity.Role;
 import com.society.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +18,6 @@ public interface UserRepository extends JpaRepository<User,Long> {
     List<User> findByRole(Role role);
     List<User> findByRoleAndIsActiveTrue(Role role);
     Long countByRole(Role role);
+    List<User> findByApprovalStatus(ApprovalStatus status);
+
 }

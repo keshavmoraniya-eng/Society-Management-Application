@@ -4,6 +4,8 @@ import com.society.config.TwilioProperties;
 import com.society.dto.request.OtpVerificationRequest;
 import com.society.dto.request.RegisterRequest;
 import com.society.dto.response.AuthResponse;
+import com.society.dto.response.UserResponse;
+import com.society.entity.ApprovalStatus;
 import com.society.entity.RentalProfile;
 import com.society.entity.Role;
 import com.society.entity.User;
@@ -19,6 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -64,6 +69,7 @@ public class AuthService {
                 .role(role)
                 .isActive(true)
                 .isVerified(false)
+                .approvalStatus(ApprovalStatus.PENDING)
                 .build();
 
         user = userRepository.save(user);
@@ -85,10 +91,9 @@ public class AuthService {
             rentalProfileRepository.save(profile);
         }
 
-        log.info("User registered: ID={}, Role={}", user.getId(), user.getRole());
+        log.info("User registered - Awaiting manager approval:", user.getId(), user.getRole());
         return "Registration successful. Please login with OTP.";
     }
-
 
     public String sendOtp(String phoneNo) {
         //Clean phone number
@@ -167,4 +172,6 @@ public class AuthService {
 
         return cleaned;
     }
+
+
 }

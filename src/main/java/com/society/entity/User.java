@@ -45,6 +45,11 @@ public class User {
     @Column(name = "is_verified")
     private Boolean isVerified = false;
 
+    //New Registration approval status
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", length = 20)
+    private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -58,4 +63,27 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private SecurityGuard securityGuard;
+
+    @Column(name = "approve_at")
+    private LocalDateTime approveAt;
+
+    @Column(name = "approved_by")
+    private Long approvedBy;
+
+    @PrePersist
+    protected void onCreate(){
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (approvalStatus == null){
+            approvalStatus = ApprovalStatus.PENDING;
+        }
+
+    }
+
+    @PreUpdate
+    protected void onUpdate(){
+        updatedAt = LocalDateTime.now();
+
+    }
 }
