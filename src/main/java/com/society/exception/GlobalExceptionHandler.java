@@ -1,9 +1,11 @@
 package com.society.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,39 +19,39 @@ import com.society.dto.response.ApiResponse;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleNotFound(ResourceNotFoundException ex) {
-        log.error("Resource not found: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(ex.getMessage()));
-    }
+//    @ExceptionHandler(ResourceNotFoundException.class)
+//    public ResponseEntity<ApiResponse<Object>> handleNotFound(ResourceNotFoundException ex) {
+//        log.error("Resource not found: {}", ex.getMessage());
+//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(ex.getMessage()));
+//    }
+//
+//    @ExceptionHandler(BadRequestException.class)
+//    public ResponseEntity<ApiResponse<Object>> handleBadRequest(BadRequestException ex) {
+//        log.error("Bad request: {}", ex.getMessage());
+//        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+//    }
+//
+//    @ExceptionHandler(UnauthorizedException.class)
+//    public ResponseEntity<ApiResponse<Object>> handleUnauthorized(UnauthorizedException ex) {
+//        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(ex.getMessage()));
+//    }
+//
+//    @ExceptionHandler(AccessDeniedException.class)
+//    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(AccessDeniedException ex) {
+//        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("Access Denied"));
+//    }
 
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ApiResponse<Object>> handleBadRequest(BadRequestException ex) {
-        log.error("Bad request: {}", ex.getMessage());
-        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleUnauthorized(UnauthorizedException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("Access Denied"));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(err -> {
-            String field = ((FieldError) err).getField();
-            errors.put(field, err.getDefaultMessage());
-        });
-        log.warn("Validation failed: {}", errors);
-        return ResponseEntity.badRequest().body(
-                ApiResponse.error("Validation failed", errors));
-    }
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(MethodArgumentNotValidException ex) {
+//        Map<String, String> errors = new HashMap<>();
+//        ex.getBindingResult().getAllErrors().forEach(err -> {
+//            String field = ((FieldError) err).getField();
+//            errors.put(field, err.getDefaultMessage());
+//        });
+//        log.warn("Validation failed: {}", errors);
+//        return ResponseEntity.badRequest().body(
+//                ApiResponse.error("Validation failed", errors));
+//    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneric(Exception ex) {
@@ -57,4 +59,84 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An unexpected error occurred"));
     }
+
+
+    @ExceptionHandler(OtpException.class)
+    public ResponseEntity<ApiResponse<Object>> handleOtpException(
+            OtpException ex, HttpServletRequest request) {
+
+        log.warn("OTP Exception: code={}, path={}, showToUser={}",
+                ex.getErrorCode(), request.getRequestURI(), ex.isShowToUser());
+
+        String message = ex.isShowToUser() ? ex.getMessage() : "An error occurred. Please try again.";
+
+        return ResponseEntity.status(ex.getStatus())
+                .body(ApiResponse.error(message));
+    }
+
+    /**
+     * Handle resource not found
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleResourceNotFound(
+            ResourceNotFoundException ex, HttpServletRequest request) {
+
+        log.info("Resource not found: {} - path: {}", ex.getMessage(), request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    /**
+     * Handle bad request
+     */
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<Object>> handleBadRequest(
+            BadRequestException ex, HttpServletRequest request) {
+
+        log.info("Bad request: {} - path: {}", ex.getMessage(), request.getRequestURI());
+
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    /**
+     * Handle validation errors
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(
+            MethodArgumentNotValidException ex) {
+
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach(err -> {
+            String field = ((FieldError) err).getField();
+            errors.put(field, err.getDefaultMessage());
+        });
+
+        log.warn("Validation failed: {}", errors);
+
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Validation failed", errors));
+    }
+
+    /**
+     * Handle Spring Security access denied
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Access denied"));
+    }
+
+    /**
+     * Handle bad credentials
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleBadCredentials(BadCredentialsException ex) {
+        log.warn("Bad credentials: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Invalid credentials"));
+    }
+
 }

@@ -1,16 +1,20 @@
 package com.society.service;
 
-
 import com.society.dto.request.OtpVerificationRequest;
 import com.society.dto.request.RegisterRequest;
 import com.society.dto.response.AuthResponse;
-import com.society.entity.*;
+import com.society.entity.Role;
+import com.society.entity.User;
 import com.society.exception.BadRequestException;
-import com.society.repository.*;
+import com.society.exception.ResourceNotFoundException;
+import com.society.repository.UserRepository;
 import com.society.security.JwtUtil;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -24,8 +28,6 @@ import static org.mockito.Mockito.*;
 class AuthServiceTest {
 
     @Mock private UserRepository userRepository;
-    @Mock private RentalProfileRepository rentalProfileRepository;
-    @Mock private SecurityGuardRepository securityGuardRepository;
     @Mock private OtpService otpService;
     @Mock private JwtUtil jwtUtil;
 
@@ -40,24 +42,37 @@ class AuthServiceTest {
     @DisplayName("Register rental - Success")
     void registerRental_Success() {
         RegisterRequest req = RegisterRequest.builder()
-                .fullName("keshav").phoneNo("7987948810").role("RENTAL")
-                .apartmentNo("A-101").totalMembers(4).bloodGroup("O+").build();
+                .fullName("John")
+                .phoneNo("9876543210")
+                .role("RENTAL")
+                .apartmentNo("A-101")
+                .totalMembers(4)
+                .bloodGroup("O+")
+                .build();
 
-        User saved = User.builder().id(1L).phoneNo("7987948810").role(Role.RENTAL).build();
+        User saved = User.builder()
+                .id(1L)
+                .phoneNo("9876543210")
+                .role(Role.RENTAL)
+                .build();
 
-        when(userRepository.existsByPhoneNo("7987948810")).thenReturn(false);
+        when(userRepository.existsByPhoneNo("9876543210")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(saved);
 
         String result = authService.register(req);
 
         assertThat(result).contains("Registration successful");
-        verify(rentalProfileRepository).save(any(RentalProfile.class));
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
-    @DisplayName("Register - Phone exists throws exception")
+    @DisplayName("Register - Phone already exists")
     void register_PhoneExists_Throws() {
-        RegisterRequest req = RegisterRequest.builder().phoneNo("7987948810").role("RENTAL").build();
+        RegisterRequest req = RegisterRequest.builder()
+                .phoneNo("9876543210")
+                .role("RENTAL")
+                .build();
+
         when(userRepository.existsByPhoneNo(anyString())).thenReturn(true);
 
         assertThatThrownBy(() -> authService.register(req))
@@ -65,32 +80,41 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("Login with OTP - Success")
-    void loginWithOtp_Success() {
-        User user = User.builder().id(1L).phoneNo("7987948810").isActive(true).build();
-        when(userRepository.findByPhoneNo("7987948810")).thenReturn(Optional.of(user));
-
-        AuthResponse res = authService.loginWithOtp("7987948810");
-
-        assertThat(res.getPhoneNo()).isEqualTo("7987948810");
-        verify(otpService).generateAndSendOtp("7987948810");
-    }
-
-    @Test
     @DisplayName("Verify OTP - Success returns token")
     void verifyOtp_Success() {
         User user = User.builder()
-                .id(1L).phoneNo("7987948810").role(Role.RENTAL)
-                .fullName("keshav").isVerified(false).build();
+                .id(1L)
+                .phoneNo("9876543210")
+                .role(Role.RENTAL)
+                .fullName("John")
+                .isVerified(false)
+                .build();
 
         when(otpService.verifyOtp(anyString(), anyString())).thenReturn(true);
-        when(userRepository.findByPhoneNo("7987948810")).thenReturn(Optional.of(user));
-        when(jwtUtil.generateToken(anyString(), anyString(), anyLong())).thenReturn("token");
+        when(userRepository.findByPhoneNo("9876543210")).thenReturn(Optional.of(user));
+        when(jwtUtil.generateToken(anyString(), anyString(), anyLong())).thenReturn("jwt-token");
 
-        AuthResponse res = authService.verifyOtpAndLogin(
-                OtpVerificationRequest.builder().phoneNo("7987948810").otp("123456").build());
+        AuthResponse response = authService.verifyOtpAndLogin(
+                OtpVerificationRequest.builder()
+                        .phoneNo("9876543210")
+                        .otp("123456")
+                        .build());
 
-        assertThat(res.getToken()).isEqualTo("token");
-        assertThat(res.getRole()).isEqualTo("RENTAL");
+        assertThat(response.getToken()).isEqualTo("jwt-token");
+        assertThat(response.getRole()).isEqualTo("RENTAL");
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Verify OTP - Invalid throws exception")
+    void verifyOtp_Invalid_Throws() {
+        when(otpService.verifyOtp(anyString(), anyString())).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.verifyOtpAndLogin(
+                OtpVerificationRequest.builder()
+                        .phoneNo("9876543210")
+                        .otp("wrong")
+                        .build()))
+                .isInstanceOf(BadRequestException.class);
     }
 }

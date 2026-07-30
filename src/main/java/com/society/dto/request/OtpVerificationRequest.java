@@ -7,10 +7,13 @@ import lombok.*;
 public class OtpVerificationRequest {
 
     @NotBlank
-    @Pattern(regexp = "^[0-9]{10}$")
+    @Pattern(
+            regexp = "^[0-9]{10,15}$|^\\+[0-9]{10,15}$",
+            message = "Phone must be 10-15 digits (with optional + prefix)"
+    )
     private String phoneNo;
 
     @NotBlank
-    @Pattern(regexp = "^[0-9]{6}$")
+    @Pattern(regexp = "^[0-9]{4,8}$", message = "OTP must be 4-8 digits")
     private String otp;
 }
