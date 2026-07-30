@@ -129,6 +129,7 @@ public class OtpService {
      * - We never compare OTPs ourselves
      */
     public boolean verifyOtp(String phoneNo, String otp) {
+
         if (!twilioInitialized) {
             log.error("Cannot verify OTP - Twilio not initialized");
             throw OtpException.serviceUnavailable();
