@@ -62,9 +62,22 @@ public class AuthService {
             throw new BadRequestException("Invalid role specified");
         }
 
+        String email = request.getEmail();
+
+        if (email != null) {
+            email = email.trim();
+            if (email.isEmpty()) {
+                email = null;
+            }
+        }
+
+        if (email != null && userRepository.existsByEmail(email)) {
+            throw new BadRequestException("Email already registered");
+        }
+
         User user = User.builder()
                 .phoneNo(cleanPhone)
-                .email(request.getEmail())
+                .email(email)
                 .fullName(request.getFullName())
                 .role(role)
                 .isActive(true)

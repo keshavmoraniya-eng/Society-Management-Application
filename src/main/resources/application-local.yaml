@@ -44,7 +44,7 @@ twilio:
   account-sid: ${TWILIO_ACCOUNT_SID:}             # ← No default value
   auth-token: ${TWILIO_AUTH_TOKEN:}               # ← No default value
   verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:} # ← No default value
-  default-country-code: ${TWILIO_COUNTRY_CODE:91}
+  default-country-code: "91"
   expiration-minutes: 5
   max-requests-per-window: 3
   max-verify-attempts: 5

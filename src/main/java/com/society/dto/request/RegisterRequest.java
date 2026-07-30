@@ -24,7 +24,7 @@ public class RegisterRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotNull(message = "Role is required")
+    @NotBlank(message = "Role is required")
     @Pattern(
             regexp = "^(RENTAL|SOCIETY_MANAGER|SOCIETY_OWNER|SECURITY_GUARD)$",
             message = "Role must be RENTAL, SOCIETY_MANAGER, SOCIETY_OWNER, or SECURITY_GUARD"

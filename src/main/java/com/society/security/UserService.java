@@ -193,6 +193,13 @@ public class UserService {
         return userRepository.existsByPhoneNo(phoneNo);
     }
 
+    public List<UserResponse> getPendingApproval(){
+        log.info("Fetching pending approval users");
+        return userRepository.findByApprovalStatus(ApprovalStatus.PENDING).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private UserResponse mapToResponse(User user) {
         UserResponse.UserResponseBuilder builder = UserResponse.builder()
                 .id(user.getId())
